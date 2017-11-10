@@ -2,7 +2,7 @@ import java.io.StringReader;
 import java.util.*;
 
 import edu.stanford.nlp.ling.CoreLabel;
-import edu.stanford.nlp.ling.Sentence;
+import edu.stanford.nlp.ling.SentenceUtils;
 import edu.stanford.nlp.process.TokenizerFactory;
 import edu.stanford.nlp.parser.lexparser.LexicalizedParser;
 import edu.stanford.nlp.process.CoreLabelTokenFactory;
@@ -59,7 +59,7 @@ public class Main {
         // Uncomment the following line to obtain original Stanford Dependencies
         // tlp.setGenerateOriginalDependencies(true);
         GrammaticalStructureFactory gsf = tlp.grammaticalStructureFactory();
-        Tree parse = lp.apply(Sentence.toWordList(sent));
+        Tree parse = lp.apply(SentenceUtils.toWordList(sent));
         //parse.pennPrint();
 
         GrammaticalStructure gs = gsf.newGrammaticalStructure(parse);
