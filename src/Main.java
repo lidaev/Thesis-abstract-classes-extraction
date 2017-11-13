@@ -64,9 +64,11 @@ public class Main {
             actorsSet.add(actor);
         }
 
-        for (String sentence : sentences) {
+        dependencyParser(sentences[0].split(" "), actorsSet);
+
+        /*for (String sentence : sentences) {
             dependencyParser(sentence.split(" "), actorsSet);
-        }
+        }*/
     }
 
     public static void dependencyParser(String[] sent, HashSet<String> actors) {
@@ -80,35 +82,50 @@ public class Main {
 
         GrammaticalStructure gs = gsf.newGrammaticalStructure(parse);
         Collection<TypedDependency> tdl = gs.typedDependenciesCollapsedTree();
-        System.out.println("Sentence");
-        System.out.println(tdl);
 
-        /*ArrayList<Entity> entities = new ArrayList<>();
+        ArrayList<Entity> entities = new ArrayList<>();
         Entity object;
         Method method;
-        HashMap<String, ArrayList<String>> methods = new HashMap<>();
+        ArrayList<Method> methods = new ArrayList<>();
         ArrayList<String> attributes = new ArrayList<>();
 
         for (TypedDependency td : tdl) {
-            System.out.println(td);
+            //extract object and methods
             if (td.reln().toString().equals("nsubj")) {
                 if (actors.contains(td.dep().value().toString())) {
                     object = new Entity(td.dep().value());
                     method = new Method(td.gov().value().toString());
                     object.addMethod(method);
-                    methods.put(method.getName(), new ArrayList<>());
+                    methods.add(method);
+                    //store list of all classes
                     entities.add(object);
                 }
             }
 
             if (td.reln().toString().equals("dobj")) {
-                if (methods.containsKey(td.gov())) {
-                    ArrayList<String> methodAttrs = methods.get(td.gov());
-                    attributes.add(td.gov().toString());
-                    methodAttrs.add(td.dep().toString());
-                    methods.put(td.gov().toString(), methodAttrs);
+                for (Method m : methods) {
+                    if (m.getName().equals(td.gov().value())) {
+                        m.addAttribute(td.dep().value());
+                    }
                 }
             }
-        }*/
+
+            if (td.reln().toString().equals("conj:and")) {
+                for (Method m : methods) {
+                    if (m.containsAttribute(td.gov().value())) {
+                        m.addAttribute(td.dep().value());
+                    }
+                }
+            }
+        }
+
+        for (Entity en : entities) {
+            System.out.println(en.name);
+            for (Method m : en.methods) {
+                System.out.println(m.name);
+                System.out.println("Attributes:");
+                m.getAttributes();
+            }
+        }
     }
 }

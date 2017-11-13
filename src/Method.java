@@ -12,6 +12,7 @@ public class Method {
     public Method(String name) {
         this.name = name;
         actions = new ArrayList<>();
+        attributes = new ArrayList<>();
     }
 
     public void addAction(String action) {
@@ -22,6 +23,10 @@ public class Method {
         if (!attributes.isEmpty()) {
             for (String attr : attributes) System.out.println(attr + " ");
         }
+    }
+
+    public boolean containsAttribute(String attr) {
+        return attributes.contains(attr);
     }
 
     public void addAttribute(String attribute) {
