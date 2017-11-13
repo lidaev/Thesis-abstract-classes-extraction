@@ -1,4 +1,7 @@
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.StringReader;
+import java.text.BreakIterator;
 import java.util.*;
 
 import edu.stanford.nlp.ling.CoreLabel;
@@ -31,41 +34,56 @@ public class Main {
         return tokenizer.tokenize();
     }
 
-    public static void main(String[] args) {
-        String str = "Clerk submits information and money describing an item to the system."/* Clerk reports the system response (with the unique acknowledgment)\n" +
-                "to the buyer. Buyer submits to the clerk a reference of a selected offer.  Clerk enters the billing and shipping information, payment method\n" +
-                "and payment details"*/;
- /*       Main parser = new Main();
-        Tree tree = parser.parse(str);
-
-        List<Tree> leaves = tree.getLeaves();
-        // Print words and Pos Tags
-        for (Tree leaf : leaves) {
-            Tree parent = leaf.parent(tree);
-           // System.out.print(leaf.label().value() + "-" + parent.label().value() + " ");
+    public static String readFile(String title) throws FileNotFoundException {
+        Scanner in = new Scanner(new File(title));
+        String result="";
+        while (in.hasNext()) {
+            result +=" " + in.next();
         }
-        System.out.println();*/
-        dependencyParser(str.split(" "));
+        return result;
     }
 
-    public static void dependencyParser(String[] sent) {
-        HashSet<String> actors = new HashSet<>();
-        actors.add("Clerk");
-        actors.add("Buyer");
+    public static void main(String[] args) throws FileNotFoundException {
+        String str = readFile("input.txt");
+        String actorsStr = readFile("actors.txt");
+        String[] sentences = new String[4];
+        BreakIterator iterator = BreakIterator.getSentenceInstance(Locale.US);
+        iterator.setText(str);
+        int start = iterator.first();
+        int i = 0;
+        for (int end = iterator.next();
+             end != BreakIterator.DONE;
+             start = end, end = iterator.next()) {
+             sentences[i++] = (str.substring(start,end));
+        }
+
+        String[] actors = actorsStr.split(" ");
+        HashSet<String> actorsSet = new HashSet<>();
+
+        for (String actor : actors) {
+            actorsSet.add(actor);
+        }
+
+        for (String sentence : sentences) {
+            dependencyParser(sentence.split(" "), actorsSet);
+        }
+    }
+
+    public static void dependencyParser(String[] sent, HashSet<String> actors) {
         LexicalizedParser lp = LexicalizedParser.loadModel(
                 "edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz",
                 "-maxLength", "80", "-retainTmpSubcategories");
         TreebankLanguagePack tlp = new PennTreebankLanguagePack();
-        // Uncomment the following line to obtain original Stanford Dependencies
-        // tlp.setGenerateOriginalDependencies(true);
         GrammaticalStructureFactory gsf = tlp.grammaticalStructureFactory();
         Tree parse = lp.apply(SentenceUtils.toWordList(sent));
         //parse.pennPrint();
 
         GrammaticalStructure gs = gsf.newGrammaticalStructure(parse);
         Collection<TypedDependency> tdl = gs.typedDependenciesCollapsedTree();
-        //System.out.println(tdl);
-        ArrayList<Entity> entities = new ArrayList<>();
+        System.out.println("Sentence");
+        System.out.println(tdl);
+
+        /*ArrayList<Entity> entities = new ArrayList<>();
         Entity object;
         Method method;
         HashMap<String, ArrayList<String>> methods = new HashMap<>();
@@ -91,6 +109,6 @@ public class Main {
                     methods.put(td.gov().toString(), methodAttrs);
                 }
             }
-        }
+        }*/
     }
 }
