@@ -64,7 +64,7 @@ public class Main {
             actorsSet.add(actor);
         }
 
-        dependencyParser(sentences[0].split(" "), actorsSet);
+        dependencyParser(sentences[1].split(" "), actorsSet);
 
         /*for (String sentence : sentences) {
             dependencyParser(sentence.split(" "), actorsSet);
@@ -117,6 +117,15 @@ public class Main {
                     }
                 }
             }
+
+            if (td.reln().toString().equals("nmod:to")) {
+                for (Method m : methods) {
+                    if (td.gov().value().equals(m.getName())) {
+                        m.addAttribute(td.dep().value());
+                    }
+                }
+            }
+
         }
 
         for (Entity en : entities) {
