@@ -1,1 +1,1 @@
-Clerk submits information and money describing an item to the system. Buyer submits to the clerk a reference of a selected offer.  Clerk enters information about payment method and payment details.
+Clerk submits information and money describing an item to the system. Buyer sends to the clerk a reference of a selected offer.  Clerk enters information about payment method and payment details.

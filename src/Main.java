@@ -46,7 +46,7 @@ public class Main {
     public static void main(String[] args) throws FileNotFoundException {
         String str = readFile("input.txt");
         String actorsStr = readFile("actors.txt");
-        String[] sentences = new String[4];
+        String[] sentences = new String[3];
         BreakIterator iterator = BreakIterator.getSentenceInstance(Locale.US);
         iterator.setText(str);
         int start = iterator.first();
@@ -57,6 +57,10 @@ public class Main {
              sentences[i++] = (str.substring(start,end));
         }
 
+        for (String sentence : sentences) {
+            System.out.println("SENTENCE: " + sentence);
+        }
+
         String[] actors = actorsStr.split(" ");
         HashSet<String> actorsSet = new HashSet<>();
 
@@ -64,74 +68,88 @@ public class Main {
             actorsSet.add(actor);
         }
 
-        dependencyParser(sentences[1].split(" "), actorsSet);
+        dependencyParser(sentences, actorsSet);
 
         /*for (String sentence : sentences) {
             dependencyParser(sentence.split(" "), actorsSet);
         }*/
     }
 
-    public static void dependencyParser(String[] sent, HashSet<String> actors) {
+    public static void dependencyParser(String[] sentences, HashSet<String> actors) {
         LexicalizedParser lp = LexicalizedParser.loadModel(
                 "edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz",
                 "-maxLength", "80", "-retainTmpSubcategories");
         TreebankLanguagePack tlp = new PennTreebankLanguagePack();
         GrammaticalStructureFactory gsf = tlp.grammaticalStructureFactory();
-        Tree parse = lp.apply(SentenceUtils.toWordList(sent));
-        //parse.pennPrint();
-
-        GrammaticalStructure gs = gsf.newGrammaticalStructure(parse);
-        Collection<TypedDependency> tdl = gs.typedDependenciesCollapsedTree();
-
         ArrayList<Entity> entities = new ArrayList<>();
         Entity object;
         Method method;
         ArrayList<Method> methods = new ArrayList<>();
-        ArrayList<String> attributes = new ArrayList<>();
 
-        for (TypedDependency td : tdl) {
-            //extract object and methods
-            if (td.reln().toString().equals("nsubj")) {
-                if (actors.contains(td.dep().value().toString())) {
-                    object = new Entity(td.dep().value());
+        for (String sen : sentences) {
+
+            Tree parse = lp.apply(SentenceUtils.toWordList(sen.split(" ")));
+            //parse.pennPrint();
+
+            GrammaticalStructure gs = gsf.newGrammaticalStructure(parse);
+            Collection<TypedDependency> tdl = gs.typedDependenciesCollapsedTree();
+
+
+            boolean hasEntity = false;
+            for (TypedDependency td : tdl) {
+                //extract object and methods
+                if (td.reln().toString().equals("nsubj")) {
                     method = new Method(td.gov().value().toString());
-                    object.addMethod(method);
-                    methods.add(method);
-                    //store list of all classes
-                    entities.add(object);
+                    //if entity already exists, then add a method to an existing one
+                    if (actors.contains(td.dep().value().toString())) {
+                        for (Entity e : entities) {
+                            if (e.getName().equals(td.dep().value())) {
+                                hasEntity = true;
+                                e.addMethod(method);
+                            }
+                        }
+                        //if the entity is new, add it
+                        if (!hasEntity) {
+                            object = new Entity(td.dep().value());
+                            object.addMethod(method);
+                            //store list of all classes
+                            entities.add(object);
+                        }
+                        methods.add(method);
+                        hasEntity = false;
+                    }
                 }
-            }
 
-            if (td.reln().toString().equals("dobj")) {
-                for (Method m : methods) {
-                    if (m.getName().equals(td.gov().value())) {
-                        m.addAttribute(td.dep().value());
+                if (td.reln().toString().equals("dobj")) {
+                    for (Method m : methods) {
+                        if (m.getName().equals(td.gov().value())) {
+                            m.addAttribute(td.dep().value());
+                        }
+                    }
+                }
+
+                if (td.reln().toString().equals("conj:and")) {
+                    for (Method m : methods) {
+                        if (m.containsAttribute(td.gov().value())) {
+                            m.addAttribute(td.dep().value());
+                        }
+                    }
+                }
+
+                if (td.reln().toString().equals("nmod:to")) {
+                    for (Method m : methods) {
+                        if (td.gov().value().equals(m.getName())) {
+                            m.addAttribute(td.dep().value());
+                        }
                     }
                 }
             }
-
-            if (td.reln().toString().equals("conj:and")) {
-                for (Method m : methods) {
-                    if (m.containsAttribute(td.gov().value())) {
-                        m.addAttribute(td.dep().value());
-                    }
-                }
-            }
-
-            if (td.reln().toString().equals("nmod:to")) {
-                for (Method m : methods) {
-                    if (td.gov().value().equals(m.getName())) {
-                        m.addAttribute(td.dep().value());
-                    }
-                }
-            }
-
         }
-
+        
         for (Entity en : entities) {
-            System.out.println(en.name);
+            System.out.println("Entity: " + en.name + "\n Methods:");
             for (Method m : en.methods) {
-                System.out.println(m.name);
+                System.out.println("Method: " + m.name);
                 System.out.println("Attributes:");
                 m.getAttributes();
             }
